@@ -1,0 +1,21 @@
+<!doctype html>
+<html en="UTF-8">
+<head>
+	<title>Twitter widget</title>
+	<link rel="stylesheet" href="style/default.css">
+</head>
+<body>
+
+	<section>
+		<div class="twtr-widget" data-twuser="phil_parsons"></div>
+	</section>
+
+	<script src="http://code.jquery.com/jquery-1.6.3.min.js"></script>
+	<script src="js/twitter.jquery.js"></script>
+	<script>
+		$(function () {
+			$(".twtr-widget").twitter();
+		});
+	</script>
+</body>
+</html>
