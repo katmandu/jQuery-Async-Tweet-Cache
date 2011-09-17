@@ -7,14 +7,35 @@
 <body>
 
 	<section>
-		<div class="twtr-widget" data-twuser="phil_parsons"></div>
+		<div class="twtr-widget listing" data-twuser="phil_parsons"></div>
+		<div class="twtr-widget search" data-twuser="StreetEateries"></div>
 	</section>
 
 	<script src="http://code.jquery.com/jquery-1.6.3.min.js"></script>
 	<script src="js/twitter.jquery.js"></script>
 	<script>
 		$(function () {
-			$(".twtr-widget").twitter();
+			$(".listing").twitter({
+					resultsPerPage: 4 // no. to show on the page
+				,	resultsPerCache: 12 // no. to store in cache
+				,	showRetweets: false // show retweets
+				,	cacheURI: "cache/widget.php" // path to the cache script
+        , showActionLinks: true // show retweet, fav, reply links
+        , showAvatar: false // show avatar on individual tweets
+        , showAuthor: false // show author on individual tweets
+        ,	showHeader: true // show author info in widget header
+			});
+
+			$(".search").twitter({
+					resultsPerPage: 8 // no. to show on the page
+				,	resultsPerCache: 12 // no. to store in cache
+				,	showRetweets: false // show retweets
+				,	cacheURI: "cache/widget.php" // path to the cache script
+        , showActionLinks: true // show retweet, fav, reply links
+        , showAvatar: true // show avatar on individual tweets
+        , showAuthor: true // show author on individual tweets
+        ,	showHeader: false // show author info in widget header
+			});
 		});
 	</script>
 </body>

@@ -8,7 +8,7 @@
       preg_replace('/[^\w\d-]/', '', $_GET['screenName']) . '.json';
     $api_call = 'http://api.twitter.com/1/statuses/user_timeline.json?';
     $api_call .= 'screen_name=' . $_GET['screenName'] . '&';
-    $api_call .= 'count=' . $_GET['resultsPerPage'] . '&';
+    $api_call .= 'count=' . $_GET['resultsPerCache'] . '&';
     $api_call .= 'include_rts=' . (int)$_GET['showRetweets'];
     $cache_for = 5; // cache results for five minutes
 

@@ -3,8 +3,13 @@
   var methods = {}
     , defaults = {
           resultsPerPage: 4
+        , resultsPerCache: 10
         , showRetweets: true
         , showActionLinks: true
+        , cacheURI: "cache/widget.php"
+        , showAvatar: false
+        , showAuthor: false
+        , showHeader: true
       };
 
   methods.init = function (opts) {
@@ -31,7 +36,7 @@
       }
       if (settings) {
         $.getJSON(
-            "cache/widget.php"
+            settings.cacheURI
           , settings
           , function (data) {
               showTweets.call($widget, data);
@@ -42,33 +47,30 @@
   };
 
   var showTweets = function (res) {
-    console.log(res);
     if (res && res.length) {
       var settings = this.data("twsettings")
         , $wrap = this
         , $tweets = $(document.createElement("ul"));
       $tweets.addClass("twtr-tweet-list");
-      $wrap
-        .empty()
-        .append(widgetHeader(res[0].user))
-        .append($tweets);
+      $wrap.empty();
+      if (settings.showHeader) {
+        $wrap.append(widgetHeader(res[0].user))
+      }
+      $wrap.append($tweets);
       $.each(res, function (i, tw) {
+        if (i >= settings.resultsPerPage) // only show the amount per page
+          return false;
         var $li = $(document.createElement("li"))
           , $p = $(document.createElement("p"))
           , $d = $(document.createElement("span"))
           , tmp = tw.text;
+        if (settings.showAvatar) {
+          $li.append(authorAvatar(tw.user));
+        }
         if (settings.showAuthor) {
           var cite = document.createElement("cite")
-            , $author = $(document.createElement("a"));
-          $author
-            .attr(
-                "href"
-              , "http://twitter.com/intent/user?screen_name=" + 
-                tw.user.screen_name
-             )
-            .addClass("twtr-action-link twtr-large-win")
-            .text("@" + tw.user.screen_name)
-            .appendTo(cite);
+            , author = authorLink(tw.user.screen_name);
+          cite.appendChild(author);
           $li.append(cite);
         }
         tmp = tmp.replace( // URIs
@@ -81,27 +83,26 @@
         );
         tmp = tmp.replace(
           /(\#(\w+))/g,
-          "<a target=\"_blank\" href=\"http://search.twitter.com/search?q=%23$2\">$1</a>"
+          "<a target=\"_blank\" " +
+          "href=\"http://search.twitter.com/search?q=%23$2\">$1</a>"
         );
-        if (settings.showAvatar) {
-          var img = new Image ();
-          img.src = tw.user.profile_image_url;
-          img.width = img.height = 40;
-          $li.append(img)
-        }
         $p.html(tmp);
         $d
           .addClass("twtr-tweet-date")
-          .text(prettyDate(tw.created_at));
+          .html(
+            "<a href=\"http://twitter.com/" + tw.user.screen_name + 
+            "/status/" + tw.id_str + "\" target=\"_blank\">" + 
+            prettyDate(tw.created_at) + "</a>"
+          );
         $li
           .append($p)
           .append($d)
           .appendTo($tweets);
         if (settings.showActionLinks) {
-          $li.append(addActionLinks(tw));
+          $li.append(actionLinks(tw));
         }
       });
-      $tweets
+      $wrap
         .find(".twtr-action-link")
         .click(openActionWindow);
     }
@@ -113,17 +114,17 @@
       , $handle = $(document.createElement("h4"))
       , mainImg = new Image();
     $name.text(user.name).appendTo($header);
-    $handle.text(user.screen_name).appendTo($header);
-    mainImg.src = user.profile_image_url;
-    mainImg.width = 40;
-    mainImg.height = 40;
+    $handle
+      .html(authorLink(user.screen_name))
+      .appendTo($header);
+    mainImg = authorAvatar(user);
     $header
       .addClass("twtr-usr-info")
       .append(mainImg);
     return $header;
   }
 
-  var addActionLinks = function (tw) {
+  var actionLinks = function (tw) {
     var $links = $(document.createElement("div"))
       , retweet = document.createElement("a")
       , fav = document.createElement("a")
@@ -149,6 +150,26 @@
       .append(retweet)
       .append(fav);
     return $links;
+  }
+
+  var authorAvatar = function (usr) {
+    var img = new Image ();
+    img.src = usr.profile_image_url;
+    img.width = img.height = 40;
+    return authorLink(usr.screen_name, img, "twtr-tweet-avatar");
+  }
+
+  var authorLink = function (sn, html, cn) {
+    var link = document.createElement("a");
+    link.href = "http://twitter.com/intent/user?screen_name=" + sn;
+    if (html) {
+      link.appendChild(html);
+    } else link.innerHTML = "@" + sn;
+    link.className = "twtr-action-link twtr-large-win"
+    if (cn) {
+      link.className += " " + cn;
+    }
+    return link;
   }
 
   var openActionWindow = function (ev) {
@@ -177,32 +198,32 @@
     
   };
 
-/*
- * JavaScript Pretty Date
- * Copyright (c) 2008 John Resig (jquery.com)
- * Licensed under the MIT license.
- */
+  /*
+   * JavaScript Pretty Date
+   * Copyright (c) 2008 John Resig (jquery.com)
+   * Licensed under the MIT license.
+   */
 
-// Takes an ISO time and returns a string representing how
-// long ago the date represents.
-var prettyDate = function (time) {
-  var date = new Date((time || "").replace(/-/g,"/").replace(/[TZ]/g," ")),
-    diff = (((new Date()).getTime() - date.getTime()) / 1000),
-    day_diff = Math.floor(diff / 86400);
-      
-  if ( isNaN(day_diff) || day_diff < 0 || day_diff >= 31 )
-    return;
-      
-  return day_diff == 0 && (
-      diff < 60 && "just now" ||
-      diff < 120 && "1 minute ago" ||
-      diff < 3600 && Math.floor( diff / 60 ) + " minutes ago" ||
-      diff < 7200 && "1 hour ago" ||
-      diff < 86400 && Math.floor( diff / 3600 ) + " hours ago") ||
-    day_diff == 1 && "Yesterday" ||
-    day_diff < 7 && day_diff + " days ago" ||
-    day_diff < 31 && Math.ceil( day_diff / 7 ) + " weeks ago";
+  // Takes an ISO time and returns a string representing how
+  // long ago the date represents.
+  var prettyDate = function (time) {
+    var date = new Date((time || "").replace(/-/g,"/").replace(/[TZ]/g," ")),
+      diff = (((new Date()).getTime() - date.getTime()) / 1000),
+      day_diff = Math.floor(diff / 86400);
+        
+    if ( isNaN(day_diff) || day_diff < 0 || day_diff >= 31 )
+      return;
+        
+    return day_diff == 0 && (
+        diff < 60 && "just now" ||
+        diff < 120 && "1 minute ago" ||
+        diff < 3600 && Math.floor( diff / 60 ) + " minutes ago" ||
+        diff < 7200 && "1 hour ago" ||
+        diff < 86400 && Math.floor( diff / 3600 ) + " hours ago") ||
+      day_diff == 1 && "Yesterday" ||
+      day_diff < 7 && day_diff + " days ago" ||
+      day_diff < 31 && Math.ceil( day_diff / 7 ) + " weeks ago";
 
-}
+  };
 
 })(jQuery);
